@@ -1,0 +1,30 @@
+{
+  "name": "opencode-promptcraft",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Review prompts inside OpenCode and send a stronger version.",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@opencode/plugin": "^2.1.0",
+    "@promptcraft/core": "^0.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
