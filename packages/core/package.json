@@ -1,0 +1,25 @@
+{
+  "name": "@promptcraft/core",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Framework-agnostic prompt review engine for coding agents.",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

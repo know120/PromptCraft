@@ -1,0 +1,25 @@
+{
+  "name": "promptcraft",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Review prompts for coding agents and suggest stronger ones.",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean && rm -rf packages/*/dist",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -b --pretty"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
