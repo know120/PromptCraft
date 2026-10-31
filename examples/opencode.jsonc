@@ -1,0 +1,34 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Load the plugin by package name and pass PromptCraft's options here.
+  // Once the package is published, `npm install opencode-promptcraft` first.
+  "plugins": [
+    {
+      "package": "opencode-promptcraft",
+      "options": {
+        // "auto" asks a model only when the heuristic score is below
+        // llmThreshold. Use "always" for a model review every time, or
+        // "never" to stay fully deterministic.
+        "llm": "auto",
+        "llmThreshold": 85,
+
+        // Optional. Defaults to the model selected in OpenCode.
+        // "model": { "providerID": "opencode", "id": "claude-sonnet-4-20250514" },
+
+        // Rename the slash commands if they collide with something else.
+        "reviewCommand": "prompt-review",
+        "applyCommand": "prompt-apply",
+
+        // Findings printed per report.
+        "maxFindings": 8,
+
+        // Show the report immediately. OpenCode can only display a plugin
+        // message by admitting it into the session, which starts an assistant
+        // turn, so this spends one model call per review. Leave it false to
+        // queue the report for the next turn instead.
+        "immediate": false
+      }
+    }
+  ]
+}
