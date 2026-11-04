@@ -107,15 +107,42 @@ The prompt mentions a failure but does not include the error itself.
 ...
 ````
 
+### Session analysis (`/prompt-session`)
+
+To inspect prompting habits across the entire conversation, run `/prompt-session`:
+
+```md
+## PromptCraft — Session Analysis · 78/100 (C)
+`█████████░░░  78/100`
+
+### Overview · 4 prompts analyzed
+- **Average score:** 78/100 (Grade C)
+- **Score trend:** Improving (52 → 74 → 88 → 98)
+- **Highest scoring prompt:** #4 (98/100 · Grade A)
+- **Prompt needing most attention:** #1 (52/100 · Grade F)
+
+### Recurring habits across session
+**1. No acceptance criteria** · occurred in 3 of 4 prompts (75%) · worth fixing
+The prompt describes work without stating how you or the agent will confirm it works.
+→ **Fix:** Add a "Done when:" or "Acceptance criteria:" checklist.
+
+### Prompt breakdown
+**#1. 52/100 (F)** · 14 words · bug
+> fix the login thing, it's broken, maybe improve it somehow
+- _Top issues:_ No error output, No acceptance criteria, Vague terms
+...
+```
+
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| `/prompt-review <prompt>` | Runs the analysis, stores the last review for the session, posts the report. |
+| `/prompt-review <prompt>` | Runs the analysis, stores the last review for the session, posts the report. Also accepts `--session` to analyze all session prompts. |
 | `/prompt-apply` | Sends the stored scaffold as the next user prompt. |
+| `/prompt-session` | Analyzes all user prompts in the session: average score, trend, recurring habits, and per-prompt breakdown. |
 
-The commands are plugin options: `reviewCommand` (default `prompt-review`) and
-`applyCommand` (default `prompt-apply`).
+The commands are plugin options: `reviewCommand` (default `prompt-review`),
+`applyCommand` (default `prompt-apply`), and `sessionCommand` (default `prompt-session`).
 
 ## Options
 
@@ -125,6 +152,7 @@ The commands are plugin options: `reviewCommand` (default `prompt-review`) and
 | `model` | selected OpenCode model | Model for the deep review. |
 | `reviewCommand` | `"prompt-review"` | Slash command used to review. |
 | `applyCommand` | `"prompt-apply"` | Slash command used to apply the scaffold. |
+| `sessionCommand` | `"prompt-session"` | Slash command used to analyze all session prompts. |
 | `llmThreshold` | `85` | Heuristic score under which `auto` runs the model. |
 | `maxFindings` | `8` | Findings printed per report. |
 | `immediate` | `false` | Advertise the report via a synthetic message immediately instead of queueing it for the next turn. Costs one assistant turn per report; default is to keep review turns out of the session. |

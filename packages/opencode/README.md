@@ -1,14 +1,19 @@
 # `@promptcraft/opencode` — PromptCraft for OpenCode
 
-The first PromptCraft adapter. It ships an OpenCode plugin that exposes two
-explicit slash commands.
+The first PromptCraft adapter. It ships an OpenCode plugin that exposes
+explicit slash commands for individual prompt reviews and full session prompt
+analysis.
 
 ## Commands
 
 - `/prompt-review <prompt>` — run the review, store the last result, post the
-  report as a synthetic session message.
+  report as a synthetic session message. Also accepts `--session` to analyze the
+  entire session.
 - `/prompt-apply` — send the stored scaffold through the session as a normal
   prompt, so it shows up as a real user turn.
+- `/prompt-session` (or `/prompt-review-session`) — analyze all user prompts
+  sent in the current session, computing score progression, recurring habits,
+  strengths, and a prompt-by-prompt breakdown.
 
 ## Options
 
@@ -18,8 +23,9 @@ Accepted via the plugin config entry (`{ "package": "opencode-promptcraft", "opt
 | --- | --- | --- | --- |
 | `llm` | `"auto" \| "always" \| "never"` | `"auto"` | Deep model review. |
 | `model` | `{ providerID, id }` | OpenCode default | Model used for the deep review. |
-| `reviewCommand` | `string` | `"prompt-review"` | Slash command for reviews. |
+| `reviewCommand` | `string` | `"prompt-review"` | Slash command for single prompt reviews. |
 | `applyCommand` | `string` | `"prompt-apply"` | Slash command for applying the scaffold. |
+| `sessionCommand` | `string` | `"prompt-session"` | Slash command for analyzing all session prompts. |
 | `llmThreshold` | `number` | `85` | Heuristic score under which `auto` calls the model. |
 | `maxFindings` | `number` | `8` | Findings printed per report. |
 | `immediate` | `boolean` | `false` | Advertise the report immediately instead of queueing it. See below. |
