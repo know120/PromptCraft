@@ -204,12 +204,17 @@ prompt  ──▶  features  ──▶  rules ──▶  findings ──▶ scor
 
 - `@promptcraft/core` — framework-agnostic engine. Zero runtime dependencies.
   Emits ESM TypeScript that NodeNext adapters can import directly.
-- Adapters — OpenCode today; Codex and others later. Adapters implement a small
-  provider interface and decide how the report is surfaced.
+- `@promptcraft/codex` — Codex adapter: `buildCodexPrompt`, `buildCodexReviewPrompt`,
+  and `reviewWithCodex` on top of the shared engine.
+- Adapters — OpenCode today; Codex adapter scaffolded (`@promptcraft/codex`);
+  Claude Code and others later. Adapters implement a small provider interface and
+  decide how the report is surfaced.
 
-Core exports: `analyze`, `analyzePrompt`, `gradeFor`, `extractFeatures`,
-`buildImprovedPrompt`, `formatReport`, `formatSummary`, `parseLlmReview`,
+Core exports: `analyze`, `analyzePrompt`, `analyzePrompts`, `gradeFor`, `extractFeatures`,
+`buildImprovedPrompt`, `formatReport`, `formatSessionReport`, `formatSummary`, `parseLlmReview`,
 `reviewPrompt`, `defaultRules`.
+
+Codex adapter exports: `buildCodexPrompt`, `buildCodexReviewPrompt`, `reviewWithCodex`.
 
 ## Adding an adapter
 
@@ -239,7 +244,9 @@ npm run typecheck
 - Rules are heuristic and English-first; no repo-awareness yet (rules cannot read
   your files, they only see the prompt text).
 - No automatic interception: the command is deliberately explicit.
-- Adapters for Codex, Claude Code, and CLI are planned but not shipped.
+- The Codex adapter is scaffolded (`@promptcraft/codex`) but not yet wired to a
+  Codex CLI command surface; CLI, repo-aware context, and custom rule packs are
+  planned — see `docs/future-features.md`.
 - Model reviews use a generic JSON contract; provider-specific behaviour still
   needs verification per agent.
 - Report delivery uses OpenCode's synthetic message mechanism; behavior differs
