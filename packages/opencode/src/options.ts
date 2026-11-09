@@ -9,6 +9,8 @@ export interface PromptCraftOptions {
   reviewCommand: string
   /** Command that sends the stored scaffold. Defaults to `prompt-apply`. */
   applyCommand: string
+  /** Command that analyzes all prompts in the session. Defaults to `prompt-session`. */
+  sessionCommand: string
   /** Score below which `auto` triggers a model review. Defaults to 85. */
   llmThreshold: number
   /** Maximum findings printed in the report. Defaults to 8. */
@@ -63,6 +65,7 @@ export function readOptions(
     model: readModel(raw.model),
     reviewCommand: readCommand(raw.reviewCommand, "prompt-review"),
     applyCommand: readCommand(raw.applyCommand, "prompt-apply"),
+    sessionCommand: readCommand(raw.sessionCommand, "prompt-session"),
     llmThreshold: readNumber(raw.llmThreshold, 85, 0, 100),
     maxFindings: readNumber(raw.maxFindings, 8, 1, 20),
     immediate: readBoolean(raw.immediate, false),

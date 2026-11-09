@@ -19,6 +19,7 @@
         // Rename the slash commands if they collide with something else.
         "reviewCommand": "prompt-review",
         "applyCommand": "prompt-apply",
+        "sessionCommand": "prompt-session",
 
         // Findings printed per report.
         "maxFindings": 8,
