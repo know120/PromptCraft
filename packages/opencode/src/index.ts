@@ -1,9 +1,9 @@
 import { Plugin } from "@opencode/plugin"
 import {
   analyze,
-  analyzeSession,
   formatReport,
   formatSessionReport,
+  type Analysis,
   type LlmProvider,
 } from "@promptcraft/core"
 import { readOptions, type PromptCraftOptions } from "./options.js"
@@ -16,6 +16,7 @@ interface StoredReview {
 }
 
 const storageKey = (sessionID: string) => `last-review/${sessionID}`
+const SESSION_REVIEW = /^all\b/i
 
 function usage(options: PromptCraftOptions): string {
   return [
@@ -26,7 +27,7 @@ function usage(options: PromptCraftOptions): string {
     "It reviews the prompt before you send it, lists what will confuse the agent, and builds a stronger version.",
     `Then run \`/${options.applyCommand}\` to send that version, or edit your prompt yourself.`,
     "",
-    `To analyze all prompts sent in the current session, run \`/${options.sessionCommand}\`.`,
+    `Run \`/prompt-review all\` to review every prompt sent in this session.`,
   ].join("\n")
 }
 
@@ -63,90 +64,101 @@ export default Plugin.define({
       return provider
     }
 
-    const inMemoryPrompts = new Map<string, string[]>()
-    if (typeof ctx.session.hook === "function") {
+    const reviewSingle = async (
+      sessionID: string,
+      text: string,
+    ): Promise<void> => {
       try {
-        await ctx.session.hook("prompt", (event) => {
-          if (event && event.sessionID && event.prompt?.text) {
-            const list = inMemoryPrompts.get(event.sessionID) ?? []
-            list.push(event.prompt.text)
-            inMemoryPrompts.set(event.sessionID, list)
-          }
-        })
-      } catch {
-        // hook registration not supported or optional in this environment
-      }
-    }
-
-    const runSessionAnalysis = async (sessionID: string) => {
-      try {
-        let userPrompts: Array<{ text: string; timestamp?: number; id?: string }> = []
-
-        try {
-          const raw = await ctx.session.context({ sessionID })
-          const list = Array.isArray(raw) ? raw : (raw as any)?.data ?? []
-
-          for (const item of list) {
-            if (item && item.type === "user" && typeof item.text === "string") {
-              const text = item.text.trim()
-              if (!text) continue
-
-              // Skip promptcraft slash commands
-              if (
-                text.startsWith(`/${options.reviewCommand}`) ||
-                text.startsWith(`/${options.applyCommand}`) ||
-                text.startsWith(`/${options.sessionCommand}`) ||
-                text.startsWith("/prompt-review-session") ||
-                text.startsWith("/prompt-session")
-              ) {
-                continue
-              }
-
-              userPrompts.push({
-                text,
-                timestamp:
-                  typeof item.time?.created === "number"
-                    ? item.time.created
-                    : undefined,
-                id: typeof item.id === "string" ? item.id : undefined,
-              })
-            }
-          }
-        } catch {
-          // If session context fails to fetch, fall back to in-memory recorded prompts
-        }
-
-        if (userPrompts.length === 0) {
-          const fallback = inMemoryPrompts.get(sessionID) ?? []
-          userPrompts = fallback
-            .filter((t) => t.trim().length > 0)
-            .map((text) => ({ text }))
-        }
-
-        if (userPrompts.length === 0) {
-          await notice(
-            sessionID,
-            "## PromptCraft — Session Analysis\n\nNo user prompts found in this session yet. Prompts you send to the agent will be analyzed here.",
-            "PromptCraft",
-          )
-          return
-        }
-
         const llm = getProvider()
-        const analysis = await analyzeSession(userPrompts, {
+        const analysis = await analyze(text, {
           llm,
           llmMode: options.llm,
           llmThreshold: options.llmThreshold,
         })
 
+        const stored: StoredReview = {
+          improvedPrompt: analysis.llm?.rewrittenPrompt ?? analysis.improvedPrompt,
+          score: analysis.score,
+          createdAt: Date.now(),
+        }
+        await ctx.storage.set(
+          storageKey(sessionID),
+          { ...stored } as Record<string, string | number>,
+        )
+
         await notice(
           sessionID,
-          formatSessionReport(analysis),
-          `PromptCraft session analysis · ${analysis.averageScore}/100`,
+          formatReport(analysis, {
+            maxFindings: options.maxFindings,
+            footer:
+              analysis.findings.length > 0
+                ? `Run \`/${options.applyCommand}\` to send the scaffold, or edit your prompt and resend it.`
+                : undefined,
+          }),
+          `PromptCraft review · ${analysis.score}/100`,
         )
       } catch (error) {
         await notice(sessionID, errorText(error), "PromptCraft")
       }
+    }
+
+    const reviewSession = async (sessionID: string): Promise<void> => {
+      const llm = getProvider()
+      const messages = await ctx.session.context({ sessionID })
+
+      const prompts: string[] = []
+      for (const message of messages) {
+        if (message.type !== "user") continue
+        const text = (message.text ?? "").trim()
+        if (!text) continue
+        if (text.toLowerCase() === "all") continue
+        if (/^\/(prompt-)?/i.test(text)) continue
+        prompts.push(text)
+      }
+
+      if (prompts.length === 0) {
+        await notice(sessionID, usage(options), "PromptCraft")
+        return
+      }
+
+      const analyses: Analysis[] = []
+      for (const prompt of prompts) {
+        analyses.push(await analyze(prompt, { llm, llmMode: options.llm, llmThreshold: options.llmThreshold }))
+      }
+
+      const averageScore = Math.round(
+        analyses.reduce((sum, analysis) => sum + analysis.score, 0) / analyses.length,
+      )
+      const worstIndex = analyses.reduce(
+        (worst, analysis, index) =>
+          analysis.score < analyses[worst]!.score ? index : worst,
+        0,
+      )
+      const weakest = analyses[worstIndex]!
+
+      await ctx.storage.set(
+        storageKey(sessionID),
+        {
+          improvedPrompt: weakest.llm?.rewrittenPrompt ?? weakest.improvedPrompt,
+          score: weakest.score,
+          createdAt: Date.now(),
+        } as Record<string, string | number>,
+      )
+
+      await notice(
+        sessionID,
+        formatSessionReport(
+          {
+            entries: prompts.map((prompt, index) => ({ prompt, analysis: analyses[index]! })),
+            averageScore,
+          },
+          {
+            maxFindings: options.maxFindings,
+            footer: `Run \`/${options.applyCommand}\` to send the scaffold of the weakest prompt, or edit your prompt and resend it.`,
+          },
+        ),
+        `PromptCraft session review · ${analyses.length} prompts`,
+      )
     }
 
     await ctx.command.transform((editor) => {
@@ -155,48 +167,15 @@ export default Plugin.define({
         description: "Review a prompt for mistakes and build a stronger version",
         execute: async ({ sessionID, prompt }) => {
           const text = prompt.text.trim()
+          if (/^all\b/i.test(text)) {
+            await reviewSession(sessionID)
+            return
+          }
           if (!text) {
             await notice(sessionID, usage(options), "PromptCraft")
             return
           }
-
-          if (text === "--session" || text === "-s" || text === "session") {
-            await runSessionAnalysis(sessionID)
-            return
-          }
-
-          try {
-            const llm = getProvider()
-            const analysis = await analyze(text, {
-              llm,
-              llmMode: options.llm,
-              llmThreshold: options.llmThreshold,
-            })
-
-            const stored: StoredReview = {
-              improvedPrompt: analysis.llm?.rewrittenPrompt ?? analysis.improvedPrompt,
-              score: analysis.score,
-              createdAt: Date.now(),
-            }
-            await ctx.storage.set(
-              storageKey(sessionID),
-              { ...stored } as Record<string, string | number>,
-            )
-
-            await notice(
-              sessionID,
-              formatReport(analysis, {
-                maxFindings: options.maxFindings,
-                footer:
-                  analysis.findings.length > 0
-                    ? `Run \`/${options.applyCommand}\` to send the scaffold, or edit your prompt and resend it.`
-                    : undefined,
-              }),
-              `PromptCraft review · ${analysis.score}/100`,
-            )
-          } catch (error) {
-            await notice(sessionID, errorText(error), "PromptCraft")
-          }
+          await reviewSingle(sessionID, text)
         },
       })
 
@@ -225,22 +204,6 @@ export default Plugin.define({
           })
         },
       })
-
-      const sessionCommands = new Set([
-        options.sessionCommand,
-        "prompt-session",
-        "prompt-review-session",
-      ])
-      for (const name of sessionCommands) {
-        editor.add({
-          name,
-          description: "Analyze all prompts sent in the current session",
-          execute: async ({ sessionID }) => {
-            await runSessionAnalysis(sessionID)
-          },
-        })
-      }
     })
   },
 })
-

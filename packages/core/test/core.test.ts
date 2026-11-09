@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest"
 import {
   analyze,
   analyzePrompt,
+  analyzePrompts,
   extractFeatures,
   formatReport,
+  formatSessionReport,
   normalizeAsk,
   parseLlmReview,
   type LlmProvider,
@@ -146,6 +148,30 @@ describe("improved prompt", () => {
     expect(normalizeAsk("Could you please maybe improve the login flow, thanks")).toBe(
       "Improve the login flow",
     )
+  })
+})
+
+describe("analyzePrompts", () => {
+  it("analyzes each prompt and keeps the order", async () => {
+    const results = await analyzePrompts(["fix the login thing, it's broken"], [])
+    expect(results).toHaveLength(1)
+    expect(results[0]!.score).toBeLessThan(50)
+  })
+})
+
+describe("formatSessionReport", () => {
+  it("renders one section per prompt plus the average", () => {
+    const sessions = formatSessionReport({
+      entries: [
+        { prompt: "fix the login thing, it's broken, maybe improve it somehow", analysis: analyzePrompt("fix the login thing, it's broken, maybe improve it somehow") },
+        { prompt: "Add rate limiting to `src/api/login.ts`.", analysis: analyzePrompt("Add rate limiting to `src/api/login.ts`.") },
+      ],
+      averageScore: 55,
+    })
+    expect(sessions).toContain("## PromptCraft — session review · 2 prompts · average 55/100 (D)")
+    expect(sessions).toContain("### Prompt 1 · 31/100 (F)")
+    expect(sessions).toContain("### Prompt 2")
+    expect(sessions).toContain("> Add rate limiting to `src/api/login.ts`.")
   })
 })
 

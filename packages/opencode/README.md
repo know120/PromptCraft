@@ -1,19 +1,24 @@
 # `@promptcraft/opencode` — PromptCraft for OpenCode
 
-The first PromptCraft adapter. It ships an OpenCode plugin that exposes
-explicit slash commands for individual prompt reviews and full session prompt
-analysis.
+The first PromptCraft adapter. It ships an OpenCode plugin that exposes explicit
+slash commands.
 
 ## Commands
 
 - `/prompt-review <prompt>` — run the review, store the last result, post the
-  report as a synthetic session message. Also accepts `--session` to analyze the
-  entire session.
+  report as a synthetic session message.
+- `/prompt-review all` — review every prompt sent in the session, post a single
+  session report. The scaffold of the weakest prompt is stored, so
+  `/prompt-apply` sends that one.
 - `/prompt-apply` — send the stored scaffold through the session as a normal
   prompt, so it shows up as a real user turn.
-- `/prompt-session` (or `/prompt-review-session`) — analyze all user prompts
-  sent in the current session, computing score progression, recurring habits,
-  strengths, and a prompt-by-prompt breakdown.
+
+## Reviewing a whole session
+
+`/prompt-review all` switches the review command into session mode. The plugin
+reads the session's user messages through `ctx.session.context`, runs the
+analyzer over each, and posts a single report via `formatSessionReport` (a
+per-prompt section plus an average score).
 
 ## Options
 
@@ -23,9 +28,8 @@ Accepted via the plugin config entry (`{ "package": "opencode-promptcraft", "opt
 | --- | --- | --- | --- |
 | `llm` | `"auto" \| "always" \| "never"` | `"auto"` | Deep model review. |
 | `model` | `{ providerID, id }` | OpenCode default | Model used for the deep review. |
-| `reviewCommand` | `string` | `"prompt-review"` | Slash command for single prompt reviews. |
+| `reviewCommand` | `string` | `"prompt-review"` | Slash command for reviews. |
 | `applyCommand` | `string` | `"prompt-apply"` | Slash command for applying the scaffold. |
-| `sessionCommand` | `string` | `"prompt-session"` | Slash command for analyzing all session prompts. |
 | `llmThreshold` | `number` | `85` | Heuristic score under which `auto` calls the model. |
 | `maxFindings` | `number` | `8` | Findings printed per report. |
 | `immediate` | `boolean` | `false` | Advertise the report immediately instead of queueing it. See below. |

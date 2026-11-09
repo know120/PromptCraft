@@ -1,4 +1,5 @@
 import { describeTasks } from "./rewrite.js"
+import { gradeFor } from "./analyze.js"
 import type { Analysis, Finding, Severity } from "./types.js"
 
 export interface ReportOptions {
@@ -28,20 +29,14 @@ function quote(text: string): string {
 }
 
 /**
- * Render a review as Markdown. Kept presentation-only so the same text works
- * in a terminal, in OpenCode's transcript, and on a web page.
+ * Render the body of a single-prompt report: the detected task, findings,
+ * strengths, scaffold, model review, and footer. The score header is added by
+ * the callers so session reports can reuse it per prompt.
  */
-export function formatReport(
-  analysis: Analysis,
-  options: ReportOptions = {},
-): string {
+function renderBody(analysis: Analysis, options: ReportOptions): string[] {
   const maxFindings = options.maxFindings ?? 8
   const showEvidence = options.showEvidence ?? true
   const lines: string[] = []
-
-  lines.push(`## PromptCraft — ${analysis.score}/100 (${analysis.grade})`)
-  lines.push(`\`${progressBar(analysis.score)}\``)
-  lines.push("")
 
   const detected = describeTasks(analysis.features)
   const words = analysis.features.wordCount
@@ -109,14 +104,72 @@ export function formatReport(
         lines.push(`- **${issue.title}** — ${issue.detail}`)
         if (issue.fix) lines.push(`  _Fix:_ ${issue.fix}`)
       }
+      lines.push("")
     }
-    lines.push("")
   }
 
   if (analysis.llmError) {
     lines.push(`> Model review unavailable: ${analysis.llmError}`)
     lines.push("")
   }
+
+  if (options.footer) {
+    lines.push(options.footer)
+    lines.push("")
+  }
+
+  return lines
+}
+
+/**
+ * Render a review as Markdown. Kept presentation-only so the same text works
+ * in a terminal, in OpenCode's transcript, and on a web page.
+ */
+export function formatReport(
+  analysis: Analysis,
+  options: ReportOptions = {},
+): string {
+  const lines: string[] = [
+    `## PromptCraft — ${analysis.score}/100 (${analysis.grade})`,
+    `\`${progressBar(analysis.score)}\``,
+    "",
+    ...renderBody(analysis, options),
+  ]
+  return lines.join("\n").trim()
+}
+
+export interface SessionReportEntry {
+  readonly prompt: string
+  readonly analysis: Analysis
+}
+
+export interface SessionReport {
+  readonly entries: readonly SessionReportEntry[]
+  /** Mean score across the entries, rounded to a whole number. */
+  readonly averageScore: number
+}
+
+/**
+ * Render a whole-session review: one entry per prompt plus the average. Used
+ * by adapters that analyze every prompt of a session at once.
+ */
+export function formatSessionReport(
+  report: SessionReport,
+  options: ReportOptions = {},
+): string {
+  const lines: string[] = [
+    `## PromptCraft — session review · ${report.entries.length} prompt${report.entries.length === 1 ? "" : "s"} · average ${report.averageScore}/100 (${gradeFor(report.averageScore)})`,
+    "",
+  ]
+
+  report.entries.forEach((entry, index) => {
+    lines.push(`### Prompt ${index + 1} · ${entry.analysis.score}/100 (${entry.analysis.grade})`)
+    lines.push("")
+    lines.push(`> ${quote(entry.prompt)}`)
+    lines.push("")
+    lines.push(...renderBody(entry.analysis, { ...options, footer: undefined }))
+    lines.push("")
+  })
 
   if (options.footer) {
     lines.push(options.footer)

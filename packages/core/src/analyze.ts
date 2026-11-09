@@ -102,6 +102,22 @@ export function analyzePrompt(
 }
 
 /**
+ * Run the rules over several prompts, reusing the same options (rules, LLM).
+ * Returns one analysis per prompt, in the order given. Adapters use this to
+ * review every prompt of a session at once.
+ */
+export async function analyzePrompts(
+  prompts: readonly string[],
+  options: AnalyzeOptions = {},
+): Promise<readonly Analysis[]> {
+  const analyses: Analysis[] = []
+  for (const prompt of prompts) {
+    analyses.push(await analyze(prompt, options))
+  }
+  return analyses
+}
+
+/**
  * Run the rules and, when configured, add a model review. A failed model call
  * never loses the heuristic result; the error is recorded in `llmError`.
  */
