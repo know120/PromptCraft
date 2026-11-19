@@ -24,7 +24,7 @@ promptcraft review "add rate limiting to src/api/login.ts"
 promptcraft review --input prompt.txt
 promptcraft review --json < prompt.txt
 promptcraft review --summary "fix login"
-promptcraft review --scaffold "fix login"
+promptcraft review --suggest "fix login"
 ```
 
 With no prompt argument the CLI reads stdin, which is convenient for heredocs:
@@ -42,7 +42,7 @@ PROMPTCRAFT
 | `--input <file>` | Read the prompt from a file. |
 | `--json` | Print the full analysis as JSON. |
 | `--summary` | Print a one-line verdict. |
-| `--scaffold` | Print only the improved prompt. |
+| `--suggest` | Print only the suggested better prompt. `--scaffold` is an alias. |
 | `--max-findings <n>` | Findings shown in the report (default 8). |
 
 Exit codes: `0` for a completed review (including a low score), `2` for usage

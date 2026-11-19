@@ -28,9 +28,18 @@ function quote(text: string): string {
   return text.replace(/\s+/g, " ").trim()
 }
 
+/** Pick a fence longer than any backtick run inside the block. */
+function fenceFor(text: string): string {
+  let longest = 0
+  for (const match of text.matchAll(/`+/g)) {
+    longest = Math.max(longest, match[0].length)
+  }
+  return "`".repeat(Math.max(3, longest + 1))
+}
+
 /**
  * Render the body of a single-prompt report: the detected task, findings,
- * strengths, scaffold, model review, and footer. The score header is added by
+ * strengths, suggested prompt, model review, and footer. The score header is added by
  * the callers so session reports can reuse it per prompt.
  */
 function renderBody(analysis: Analysis, options: ReportOptions): string[] {
@@ -84,14 +93,16 @@ function renderBody(analysis: Analysis, options: ReportOptions): string[] {
 
   const improved = analysis.llm?.rewrittenPrompt ?? analysis.improvedPrompt
   if (options.showImprovedPrompt !== false && improved) {
-    lines.push(
-      analysis.llm?.rewrittenPrompt
-        ? "### Suggested prompt (model rewrite)"
-        : "### Prompt scaffold",
-    )
-    lines.push("```text")
+    const rewritten = analysis.llm?.rewrittenPrompt
+    lines.push(rewritten ? "### Suggested prompt (model rewrite)" : "### Suggested prompt")
+    if (!rewritten) {
+      lines.push("_Fill in any `<placeholders>`, then send this instead of your original prompt._")
+      lines.push("")
+    }
+    const fence = fenceFor(improved)
+    lines.push(`${fence}text`)
     lines.push(improved)
-    lines.push("```")
+    lines.push(fence)
     lines.push("")
   }
 

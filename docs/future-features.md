@@ -11,7 +11,7 @@ Planned work for PromptCraft, kept here as a reference before implementation.
   `reviewWithCodex`, plus a repository- or user-scoped Codex skill
   (`$promptcraft`) backed by the CLI.
 - **CLI and harness installers** — `promptcraft review` with stdin, JSON,
-  summary, and scaffold output; `promptcraft install` writes native wrappers for
+  summary, and suggested-prompt output; `promptcraft install` writes native wrappers for
   Codex, Claude Code, Gemini CLI, Cursor, and GitHub Copilot. See
   `docs/enable-in-any-harness.md`.
 

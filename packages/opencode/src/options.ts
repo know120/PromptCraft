@@ -7,7 +7,7 @@ export interface PromptCraftOptions {
   model?: { providerID: string; id: string }
   /** Command that reviews a prompt. Defaults to `prompt-review`. */
   reviewCommand: string
-  /** Command that sends the stored scaffold. Defaults to `prompt-apply`. */
+  /** Command that sends the stored suggested prompt. Defaults to `prompt-apply`. */
   applyCommand: string
   /** Score below which `auto` triggers a model review. Defaults to 85. */
   llmThreshold: number

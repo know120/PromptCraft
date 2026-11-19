@@ -44,16 +44,16 @@ promptcraft review "add rate limiting to src/api/login.ts"
 promptcraft review --input prompt.txt
 promptcraft review --json < prompt.txt
 promptcraft review --summary "fix login"
-promptcraft review --scaffold "fix login"
+promptcraft review --suggest "fix login"
 ```
 
 | Command / option | Effect |
 | --- | --- |
 | `review [prompt]` | Print the Markdown report. Reads stdin when no prompt is given. |
 | `--input <file>` | Read the prompt from a file. |
-| `--json` | Print the full analysis (score, grade, findings, features, scaffold). |
+| `--json` | Print the full analysis (score, grade, findings, features, suggested prompt). |
 | `--summary` | Print one line: `PromptCraft 31/100 (F) · top issue: ...`. |
-| `--scaffold` | Print only the improved prompt, ready to send. |
+| `--suggest` | Print only the suggested better prompt, ready to send. `--scaffold` is an alias. |
 | `--max-findings <n>` | Findings shown in the report (default 8). |
 | `install [harness]` | Write the wrapper files for a harness. |
 | `print <harness>` | Print the wrapper files instead of writing them. |
@@ -120,8 +120,8 @@ Or type `/skills`, pick **PromptCraft**, and supply the prompt. Implicit
 invocation is disabled on purpose: PromptCraft should never take over an
 ordinary request.
 
-After the report, ask Codex to apply it and the skill sends the scaffold as
-your next message.
+After the report, the skill offers the suggested prompt. Say **apply** and Codex
+sends it as your next message.
 
 Codex reads skill changes automatically; restart it if the skill does not show
 up. The old `~/.codex/skills` folder is legacy; use `~/.agents/skills`.
@@ -224,7 +224,7 @@ When I ask you to review a prompt, do not implement it. Run:
     <the prompt, exactly as written>
     PROMPTCRAFT
 
-Paste the report verbatim. If I ask to apply it, send the `### Prompt scaffold`
+Paste the report verbatim. If I ask to apply it, send the `### Suggested prompt`
 block back as my next message, unchanged.
 ```
 
@@ -244,10 +244,12 @@ All CLI wrappers follow the same contract:
 
 1. **Review only.** The agent must not start the task while reviewing it.
 2. **Verbatim report.** The agent must not paraphrase, rescore, or add findings.
-3. **Apply separately.** "Apply" sends the `### Prompt scaffold` block as the
+3. **Apply separately.** "Apply" sends the `### Suggested prompt` block as the
    next user message, so the implementation turn starts from a real prompt.
 4. **Deterministic by default.** CLI wrappers do not call a model. The scoring
    and findings come from the shared rule engine.
+5. **Suggest, then apply.** Every report ends with a `### Suggested prompt`
+   block, and the wrapper offers to send it when you say "apply".
 
 ## Troubleshooting
 

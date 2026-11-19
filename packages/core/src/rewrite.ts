@@ -44,7 +44,7 @@ const has = (findings: readonly Finding[], ruleId: string): boolean =>
   findings.some((finding) => finding.ruleId === ruleId)
 
 /**
- * Build a ready-to-send prompt scaffold from the original request plus the
+ * Build a ready-to-send suggested prompt from the original request plus the
  * sections the review found missing. Unknown details stay as visible
  * placeholders so the user can fill them in rather than guessing.
  */

@@ -24,7 +24,7 @@ export type Command =
       text?: string
       input?: string
       json: boolean
-      scaffold: boolean
+      suggest: boolean
       summary: boolean
       maxFindings?: number
       help: boolean
@@ -54,7 +54,8 @@ Review options:
   --text <prompt>       Prompt to review (useful for scripts)
   --input <file>        Read the prompt from a file
   --json                Print the raw analysis as JSON
-  --scaffold            Print only the improved prompt
+  --suggest             Print only the suggested better prompt
+  --scaffold            Alias for --suggest (kept for compatibility)
   --summary             Print a one-line verdict
   --max-findings <n>    Findings shown in the report (default 8)
   --help                Show this help
@@ -103,7 +104,7 @@ function parseReview(argv: readonly string[]): Command {
   const command: Extract<Command, { name: "review" }> = {
     name: "review",
     json: false,
-    scaffold: false,
+    suggest: false,
     summary: false,
     help: false,
   }
@@ -124,8 +125,11 @@ function parseReview(argv: readonly string[]): Command {
       case "--json":
         command.json = true
         break
+      case "--suggest":
+        command.suggest = true
+        break
       case "--scaffold":
-        command.scaffold = true
+        command.suggest = true
         break
       case "--summary":
         command.summary = true
@@ -395,10 +399,18 @@ export async function main(argv: readonly string[] = process.argv.slice(2), io: 
         const analysis = await analyze(prompt)
         if (command.json) io.stdout(serializeAnalysis(analysis))
         else if (command.summary) io.stdout(formatSummary(analysis))
-        else if (command.scaffold) {
+        else if (command.suggest) {
           io.stdout(analysis.llm?.rewrittenPrompt ?? analysis.improvedPrompt)
         } else {
-          io.stdout(formatReport(analysis, { maxFindings: command.maxFindings }))
+          io.stdout(
+            formatReport(analysis, {
+              maxFindings: command.maxFindings,
+              footer:
+                analysis.findings.length > 0
+                  ? "Send the suggested prompt above instead of your original, or edit it first."
+                  : undefined,
+            }),
+          )
         }
         return 0
       }
