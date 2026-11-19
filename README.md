@@ -89,6 +89,12 @@ session report: an average score, then one section per prompt with its own
 findings and suggested prompts. The suggested prompt of the weakest prompt is
 stored, so `/prompt-apply` sends that one.
 
+`/prompt-review all`, `/prompt-review --all`, and `/prompt-review -a` are
+equivalent. PromptCraft records each prompt as it is sent, so the session
+review still covers prompts that OpenCode has since compacted out of the
+model-visible context. Prompts sent before PromptCraft was installed into a
+session are only available while they remain in that context.
+
 ### Codex
 
 Codex uses a skill backed by the shared `promptcraft` CLI:

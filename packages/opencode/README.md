@@ -15,10 +15,17 @@ slash commands.
 
 ## Reviewing a whole session
 
-`/prompt-review all` switches the review command into session mode. The plugin
-reads the session's user messages through `ctx.session.context`, runs the
-analyzer over each, and posts a single report via `formatSessionReport` (a
-per-prompt section plus an average score).
+`/prompt-review all` switches the review command into session mode. `--all` and
+`-a` work too. The plugin records each prompt through the session `prompt` hook
+and merges that durable log with `ctx.session.context`, runs the analyzer over
+each prompt, and posts a single report via `formatSessionReport` (a per-prompt
+section plus an average score).
+
+Recording prompts matters because `ctx.session.context` is the compacted,
+model-visible transcript. Once OpenCode compacts a session, older user messages
+can disappear from it; the recorded log keeps `/prompt-review all` complete
+across compaction and plugin reloads. Prompts sent before PromptCraft was
+loaded into a session are only available while they remain in that context.
 
 ## Options
 
