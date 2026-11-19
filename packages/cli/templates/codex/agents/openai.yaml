@@ -1,0 +1,8 @@
+interface:
+  display_name: "PromptCraft"
+  short_description: "Review and improve a prompt before sending it"
+  default_prompt: "Use $promptcraft to review this prompt:"
+
+policy:
+  # Reviewing a prompt is an explicit action; never hijack an ordinary request.
+  allow_implicit_invocation: false

@@ -1,0 +1,33 @@
+{
+  "name": "@promptcraft/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Review prompts for coding agents from any harness.",
+  "license": "MIT",
+  "bin": {
+    "promptcraft": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "templates",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@promptcraft/core": "*"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

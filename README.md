@@ -16,10 +16,12 @@ stronger version you can send instead.
   `/prompt-review` command. PromptCraft never intercepts or rewrites your
   messages automatically.
 
-## Quick start (OpenCode)
+## Quick start
 
-The OpenCode plugin is the first adapter. From a published checkout you can use
-it immediately:
+### OpenCode
+
+The OpenCode plugin is the richest adapter. From a published checkout you can
+use it immediately:
 
 ```sh
 npm install -D opencode-promptcraft
@@ -86,6 +88,42 @@ Analyzes every prompt the user sent in the current session and posts a single
 session report: an average score, then one section per prompt with its own
 findings and scaffold. The scaffold of the weakest prompt is stored, so
 `/prompt-apply` sends that one.
+
+### Codex
+
+Codex uses a skill backed by the shared `promptcraft` CLI:
+
+```sh
+npm install -g @promptcraft/cli
+promptcraft install codex --global
+```
+
+Restart Codex, then review a prompt before sending it:
+
+```text
+$promptcraft
+Add rate limiting to src/api/login.ts. After 5 failed attempts from the same IP
+within 10 minutes, return HTTP 429 with a Retry-After header.
+```
+
+Or type `/skills`, choose **PromptCraft**, and supply the prompt. The installer
+writes `~/.agents/skills/promptcraft/`; run it without `--global` inside a repo
+to commit a project-scoped skill instead.
+
+### Claude Code, Gemini CLI, Cursor, Copilot
+
+The same CLI installs a native command for each harness:
+
+```sh
+promptcraft install claude --global   # /prompt-review
+promptcraft install gemini            # /prompt-review
+promptcraft install cursor            # /prompt-review
+promptcraft install copilot           # /prompt-review
+```
+
+Run `promptcraft install --list` to see target paths, or read the full
+walkthrough: [`docs/enable-in-any-harness.md`](docs/enable-in-any-harness.md).
+That guide also covers any other harness that can run a shell command.
 
 ## What a report looks like
 
@@ -204,11 +242,14 @@ prompt  ──▶  features  ──▶  rules ──▶  findings ──▶ scor
 
 - `@promptcraft/core` — framework-agnostic engine. Zero runtime dependencies.
   Emits ESM TypeScript that NodeNext adapters can import directly.
-- `@promptcraft/codex` — Codex adapter: `buildCodexPrompt`, `buildCodexReviewPrompt`,
-  and `reviewWithCodex` on top of the shared engine.
-- Adapters — OpenCode today; Codex adapter scaffolded (`@promptcraft/codex`);
-  Claude Code and others later. Adapters implement a small provider interface and
-  decide how the report is surfaced.
+- `@promptcraft/cli` — the `promptcraft` binary: review from stdin/args, JSON
+  output, and installers for Codex, Claude Code, Gemini CLI, Cursor, and
+  Copilot.
+- `@promptcraft/codex` — Codex-flavored library helpers: `buildCodexPrompt`,
+  `buildCodexReviewPrompt`, and `reviewWithCodex` on top of the shared engine.
+- Adapters — OpenCode uses a native plugin; Codex, Claude Code, Gemini CLI,
+  Cursor, and Copilot use a CLI-backed command or skill. Adapters implement a
+  small provider interface and decide how the report is surfaced.
 
 Core exports: `analyze`, `analyzePrompt`, `analyzePrompts`, `gradeFor`, `extractFeatures`,
 `buildImprovedPrompt`, `formatReport`, `formatSessionReport`, `formatSummary`, `parseLlmReview`,
@@ -244,8 +285,9 @@ npm run typecheck
 - Rules are heuristic and English-first; no repo-awareness yet (rules cannot read
   your files, they only see the prompt text).
 - No automatic interception: the command is deliberately explicit.
-- The Codex adapter is scaffolded (`@promptcraft/codex`) but not yet wired to a
-  Codex CLI command surface; CLI, repo-aware context, and custom rule packs are
+- CLI wrappers (Codex, Claude Code, Gemini CLI, Cursor, Copilot) are deterministic
+  only. The OpenCode plugin can add a model deep review and whole-session review.
+- Repo-aware context, custom rule packs, an MCP server, and IDE integrations are
   planned — see `docs/future-features.md`.
 - Model reviews use a generic JSON contract; provider-specific behaviour still
   needs verification per agent.

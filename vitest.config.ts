@@ -6,6 +6,7 @@ export default defineConfig({
     alias: {
       "@promptcraft/core": fileURLToPath(new URL("./packages/core/src/index.ts", import.meta.url)),
       "@promptcraft/codex": fileURLToPath(new URL("./packages/codex/src/index.ts", import.meta.url)),
+      "@promptcraft/cli": fileURLToPath(new URL("./packages/cli/src/index.ts", import.meta.url)),
     },
   },
   test: {
