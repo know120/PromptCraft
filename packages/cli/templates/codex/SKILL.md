@@ -20,9 +20,10 @@ PROMPTCRAFT
 
 3. Paste the command output verbatim. Do not paraphrase it, rescore it, or add findings of your own.
 4. Do not implement the task. A review is a review, even when the prompt asks for code.
+5. If the report has a `### Suggested prompt`, end your reply by offering it: "This report includes a suggested prompt — say **apply** and I will send it."
 
 If the command is not found, run the same command through `npx -y @promptcraft/cli`, or tell the user the PromptCraft CLI is missing.
 
 ## Apply the improved prompt
 
-When the user asks to apply the result, send the `### Prompt scaffold` block from the report as your next message, unchanged. Do not wrap it in commentary and do not start the task in the same turn.
+When the user asks to apply the result, send the `### Suggested prompt` block from the report as your next message, unchanged. Do not wrap it in commentary and do not start the task in the same turn.

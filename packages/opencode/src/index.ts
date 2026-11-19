@@ -92,7 +92,7 @@ export default Plugin.define({
             maxFindings: options.maxFindings,
             footer:
               analysis.findings.length > 0
-                ? `Run \`/${options.applyCommand}\` to send the scaffold, or edit your prompt and resend it.`
+                ? `Run \`/${options.applyCommand}\` to send the suggested prompt, or edit your prompt and resend it.`
                 : undefined,
           }),
           `PromptCraft review · ${analysis.score}/100`,
@@ -154,7 +154,7 @@ export default Plugin.define({
           },
           {
             maxFindings: options.maxFindings,
-            footer: `Run \`/${options.applyCommand}\` to send the scaffold of the weakest prompt, or edit your prompt and resend it.`,
+            footer: `Run \`/${options.applyCommand}\` to send the suggested prompt of the weakest prompt, or edit your prompt and resend it.`,
           },
         ),
         `PromptCraft session review · ${analyses.length} prompts`,

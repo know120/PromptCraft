@@ -16,4 +16,5 @@ PROMPTCRAFT
 
 3. Paste the report verbatim. Do not paraphrase it, rescore it, or add findings of your own.
 4. Do not start the task described in the prompt.
-5. If the user asks to apply the result, send the `### Prompt scaffold` block from the report as your next message, unchanged.
+5. If the report has a `### Suggested prompt`, end by offering it: "This report includes a suggested prompt — say apply and I will send it."
+6. If the user asks to apply the result, send the `### Suggested prompt` block from the report as your next message, unchanged.

@@ -112,10 +112,13 @@ describe("main", () => {
     expect(parsed.score).toBeLessThan(100)
   })
 
-  it("prints only the scaffold when asked", async () => {
-    const result = await run(["--scaffold"], "fix the login thing, it's broken")
+  it("prints only the suggested prompt when asked", async () => {
+    const result = await run(["--suggest"], "fix the login thing, it's broken")
     expect(result.code).toBe(0)
     expect(result.stdout).toContain("## Task")
+
+    const legacy = await run(["--scaffold"], "fix the login thing, it's broken")
+    expect(legacy.stdout).toBe(result.stdout)
   })
 
   it("returns a usage error for an empty prompt", async () => {

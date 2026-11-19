@@ -72,10 +72,10 @@ Add rate limiting to src/api/login.ts. After 5 failed attempts from the same IP 
 > - The counter resets after 10 minutes
 > - npm test passes
 
-> Run /prompt-apply to send the scaffold, or edit your prompt and resend it.
+> Run /prompt-apply to send the suggested prompt, or edit your prompt and resend it.
 ```
 
-`/prompt-apply` sends the generated scaffold through the same session, so your
+`/prompt-apply` sends the suggested prompt through the same session, so your
 review history stays where you can see it.
 
 ### Reviewing a whole session
@@ -86,8 +86,8 @@ review history stays where you can see it.
 
 Analyzes every prompt the user sent in the current session and posts a single
 session report: an average score, then one section per prompt with its own
-findings and scaffold. The scaffold of the weakest prompt is stored, so
-`/prompt-apply` sends that one.
+findings and suggested prompts. The suggested prompt of the weakest prompt is
+stored, so `/prompt-apply` sends that one.
 
 ### Codex
 
@@ -133,7 +133,7 @@ For the prompt:
 fix the login thing, it's broken, maybe improve it somehow
 ```
 
-PromptCraft answers with a score, findings, and a scaffold:
+PromptCraft answers with a score, findings, and a suggested prompt:
 
 ```md
 ## PromptCraft — 31/100 (F)
@@ -150,7 +150,8 @@ The prompt mentions a failure but does not include the error itself.
 ### What already works
 - Long enough to carry the request.
 
-### Prompt scaffold
+### Suggested prompt
+_Fill in any `<placeholders>`, then send this instead of your original prompt._
 ````text
 ## Task
 ...
@@ -162,7 +163,7 @@ The prompt mentions a failure but does not include the error itself.
 | --- | --- |
 | `/prompt-review <prompt>` | Runs the analysis, stores the last review for the session, posts the report. |
 | `/prompt-review all` | Reviews every prompt the user sent in this session, posts a session report. |
-| `/prompt-apply` | Sends the stored scaffold as the next user prompt. |
+| `/prompt-apply` | Sends the stored suggested prompt as the next user prompt. |
 
 The commands are plugin options: `reviewCommand` (default `prompt-review`) and
 `applyCommand` (default `prompt-apply`).
@@ -174,7 +175,7 @@ The commands are plugin options: `reviewCommand` (default `prompt-review`) and
 | `llm` | `"auto"` | When to run the model review. |
 | `model` | selected OpenCode model | Model for the deep review. |
 | `reviewCommand` | `"prompt-review"` | Slash command used to review. |
-| `applyCommand` | `"prompt-apply"` | Slash command used to apply the scaffold. |
+| `applyCommand` | `"prompt-apply"` | Slash command used to apply the suggested prompt. |
 | `llmThreshold` | `85` | Heuristic score under which `auto` runs the model. |
 | `maxFindings` | `8` | Findings printed per report. |
 | `immediate` | `false` | Advertise the report via a synthetic message immediately instead of queueing it for the next turn. Costs one assistant turn per report; default is to keep review turns out of the session. |
@@ -235,7 +236,7 @@ rule explains itself in the report (`detail` + `fix`) and is weighted in scoring
 ## Architecture
 
 ```text
-prompt  ──▶  features  ──▶  rules ──▶  findings ──▶ score ──▶ report + scaffold
+prompt  ──▶  features  ──▶  rules ──▶  findings ──▶ score ──▶ report + suggested prompt
    │                                                              │
    └── adapter ──▶  LLM review (optional, additive) ◀─────────┘
 ```

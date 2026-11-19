@@ -2,6 +2,7 @@
   "name": "promptcraft",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "Review prompts for coding agents and suggest stronger ones.",
   "workspaces": [

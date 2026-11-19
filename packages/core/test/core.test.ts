@@ -182,12 +182,14 @@ describe("formatSessionReport", () => {
 })
 
 describe("formatReport", () => {
-  it("renders score, findings, and the scaffold", () => {
+  it("renders score, findings, and the suggested prompt", () => {
     const report = formatReport(analyzePrompt(BAD_PROMPT))
     expect(report).toContain("## PromptCraft")
     expect(report).toContain("/100 (F)")
     expect(report).toContain("### What to fix")
-    expect(report).toContain("### Prompt scaffold")
+    expect(report).toContain("### Suggested prompt")
+    // The scaffold can contain its own ``` block, so the outer fence must grow.
+    expect(report).toContain("````text")
   })
 
   it("mentions the model rewrite when one exists", async () => {

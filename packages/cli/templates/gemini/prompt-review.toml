@@ -16,5 +16,6 @@ Instructions:
 1. If the prompt above is empty, ask the user for one and stop.
 2. Paste the PromptCraft report verbatim. Do not paraphrase it, rescore it, or add findings of your own.
 3. Do not start the task described in the prompt.
-4. If the user asks to apply the result, send the `### Prompt scaffold` block from the report as your next message, unchanged.
+4. If the report has a `### Suggested prompt`, end by offering it: "This report includes a suggested prompt — say apply and I will send it."
+5. If the user asks to apply the result, send the `### Suggested prompt` block from the report as your next message, unchanged.
 """

@@ -23,4 +23,5 @@ Then:
 
 1. Do not paraphrase, rescore, or add findings of your own.
 2. Do not start the task described in the prompt.
-3. If the user asks to apply the result, send the `### Prompt scaffold` block from the report as your next message, unchanged.
+3. If the report has a `### Suggested prompt`, end by offering it: "This report includes a suggested prompt — say apply and I will send it."
+4. If the user asks to apply the result, send the `### Suggested prompt` block from the report as your next message, unchanged.

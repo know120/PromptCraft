@@ -139,7 +139,7 @@ export interface Analysis {
   readonly findings: readonly Finding[]
   readonly strengths: readonly string[]
   readonly features: PromptFeatures
-  /** A ready-to-send prompt scaffold built from the findings. */
+  /** A ready-to-send suggested prompt built from the findings. */
   readonly improvedPrompt: string
   /** Optional deeper review from a model. */
   llm?: LlmReview
