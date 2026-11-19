@@ -56,6 +56,12 @@ describe("extractFeatures", () => {
     expect(features.hasFilePath).toBe(true)
   })
 
+  it("finds file paths followed by sentence punctuation", () => {
+    const features = extractFeatures("Add rate limiting to src/api/login.ts. Then run the tests.")
+    expect(features.filePaths).toContain("src/api/login.ts")
+    expect(features.hasFilePath).toBe(true)
+  })
+
   it("recognises pasted error output", () => {
     const features = extractFeatures(
       "TypeError: bad call\n    at run (src/a.ts:1:2)",

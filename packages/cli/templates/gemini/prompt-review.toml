@@ -1,0 +1,20 @@
+description = "Review a prompt with PromptCraft before sending it"
+
+prompt = """
+The user wants this prompt reviewed by PromptCraft. Do not implement the task — only critique the prompt.
+
+Prompt:
+
+{{args}}
+
+PromptCraft report:
+
+!{ printf '%s' {{args}} | {{CLI}} review }
+
+Instructions:
+
+1. If the prompt above is empty, ask the user for one and stop.
+2. Paste the PromptCraft report verbatim. Do not paraphrase it, rescore it, or add findings of your own.
+3. Do not start the task described in the prompt.
+4. If the user asks to apply the result, send the `### Prompt scaffold` block from the report as your next message, unchanged.
+"""

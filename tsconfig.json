@@ -3,6 +3,7 @@
   "references": [
     { "path": "./packages/core" },
     { "path": "./packages/opencode" },
-    { "path": "./packages/codex" }
+    { "path": "./packages/codex" },
+    { "path": "./packages/cli" }
   ]
 }

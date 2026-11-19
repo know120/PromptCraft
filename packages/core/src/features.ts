@@ -10,12 +10,12 @@ const FILE_EXTENSIONS = [
 ].join("|")
 
 const PATH_RE = new RegExp(
-  String.raw`(?<=^|[\s(\`'"])((?:~|\.{1,2})?(?:[/\\])?[\w.@-]+(?:[/\\][\w.@-]+)+\.(?:${FILE_EXTENSIONS}))(?=$|[\s)\`'",:;])`,
+  String.raw`(?<=^|[\s(\`'"])((?:~|\.{1,2})?(?:[/\\])?[\w.@-]+(?:[/\\][\w.@-]+)+\.(?:${FILE_EXTENSIONS}))(?=$|[\s)\`'",:;.])`,
   "gi",
 )
 
 const BARE_FILE_RE = new RegExp(
-  String.raw`(?<=^|[\s(\`'"])([\w@-]+\.(?:${FILE_EXTENSIONS}))(?=$|[\s)\`'",:;])`,
+  String.raw`(?<=^|[\s(\`'"])([\w@-]+\.(?:${FILE_EXTENSIONS}))(?=$|[\s)\`'",:;.])`,
   "gi",
 )
 
