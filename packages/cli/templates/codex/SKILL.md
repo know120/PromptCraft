@@ -22,7 +22,7 @@ PROMPTCRAFT
 4. Do not implement the task. A review is a review, even when the prompt asks for code.
 5. If the report has a `### Suggested prompt`, end your reply by offering it: "This report includes a suggested prompt — say **apply** and I will send it."
 
-If the command is not found, run the same command through `npx -y @promptcraft/cli`, or tell the user the PromptCraft CLI is missing.
+If the command is not found, tell the user the PromptCraft CLI is missing and show the command above so they can fix the path.
 
 ## Apply the improved prompt
 

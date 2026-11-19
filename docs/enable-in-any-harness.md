@@ -11,31 +11,37 @@ There are two integration styles:
 | Native plugin | OpenCode | `/prompt-review`, `/prompt-review all`, `/prompt-apply`, optional model review via the selected OpenCode model. |
 | CLI wrapper | Codex, Claude Code, Gemini CLI, Cursor, Copilot, anything with a shell | A command or skill that runs `promptcraft review` and shows the report. Deterministic only. |
 
-## 1. Install the CLI
+## 1. Get PromptCraft from GitHub
+
+The packages are not published to npm yet, so install them from a checkout:
 
 ```sh
-npm install -g @promptcraft/cli
+git clone https://github.com/know120/PromptCraft.git ~/src/PromptCraft
+cd ~/src/PromptCraft
+npm install
+npm run build
+```
+
+That build produces the two entry points the wrappers need:
+
+| Path | What it is |
+| --- | --- |
+| `packages/opencode` | the OpenCode plugin (see [OpenCode](#opencode)) |
+| `packages/cli/dist/cli.js` | the `promptcraft` CLI used by every other harness |
+
+### Put `promptcraft` on your PATH (optional)
+
+```sh
+(cd ~/src/PromptCraft/packages/cli && npm link)   # after `npm run build`
 promptcraft --version
 ```
 
-If you do not want a global install, run it through `npx` and write that same
-command into the wrappers:
+Without linking, run the same commands as
+`node ~/src/PromptCraft/packages/cli/dist/cli.js ...`.
 
-```sh
-npx -y @promptcraft/cli review "fix the login thing, it's broken"
-npx -y @promptcraft/cli install codex --cli "npx -y @promptcraft/cli"
-```
-
-From this repository:
-
-```sh
-npm install
-npm run build
-node packages/cli/dist/cli.js review "fix the login thing, it's broken"
-```
-
-Use `--cli "node /absolute/path/to/packages/cli/dist/cli.js"` when installing
-wrappers from a source checkout.
+Once `@promptcraft/cli` is published, `npm install -g @promptcraft/cli` (or
+`npx -y @promptcraft/cli`) is equivalent, and the `--cli` overrides below are
+no longer needed.
 
 ### What the CLI can do
 
@@ -81,8 +87,18 @@ committed. `--global` uses the user-wide location instead. Existing files are
 left alone unless you add `--force`.
 
 `--cli <command>` controls what the wrapper executes. The default is
-`promptcraft`; use `--cli "npx -y @promptcraft/cli"` when the binary is not on
-`PATH`.
+`promptcraft`. From a GitHub checkout without `npm link`, install and wrap the
+built CLI directly:
+
+```sh
+node ~/src/PromptCraft/packages/cli/dist/cli.js install codex --global \
+  --cli "node /absolute/path/to/PromptCraft/packages/cli/dist/cli.js"
+```
+
+Use the absolute path inside `--cli`, because the wrapper runs from each
+project's working directory. Once the CLI is published,
+`--cli "npx -y @promptcraft/cli"` is the equivalent for people who have not
+cloned the repository.
 
 ## 3. Harness by harness
 
@@ -128,23 +144,39 @@ up. The old `~/.codex/skills` folder is legacy; use `~/.agents/skills`.
 
 ### OpenCode
 
-OpenCode uses the native plugin, not the CLI wrapper. Add it to
-`opencode.jsonc`:
+OpenCode uses the native plugin, not the CLI wrapper. The plugin loads compiled
+JavaScript, so build the checkout and point `plugins` at the package directory:
 
 ```jsonc
+// ~/.config/opencode/opencode.json or the project's opencode.jsonc
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
     {
-      "package": "opencode-promptcraft",
+      "package": "/home/you/src/PromptCraft/packages/opencode",
       "options": {
-        "llm": "auto",
-        "llmThreshold": 85
+        "llm": "auto", // "auto" | "always" | "never"; "never" is heuristics only
+        "llmThreshold": 85,
+        "maxFindings": 8,
+        "immediate": false
       }
     }
   ]
 }
 ```
+
+- Use an absolute path or `file:///home/you/src/PromptCraft/packages/opencode`;
+  absolute paths avoid any question of what a relative path resolves against.
+- The directory must contain `dist/index.js`. Rerun `npm run build` after
+  pulling, then restart OpenCode or run `opencode reload`.
+- `opencode plugin list` should list `promptcraft`. If it does not, the path is
+  wrong or the build is missing.
+- OpenCode 1 needed a shim file such as
+  `~/.config/opencode/plugins/promptcraft.ts` that re-exported the build. The V2
+  `plugins` entry above replaces it; delete the shim so the plugin does not load
+  twice.
+- When `opencode-promptcraft` is published, `"package": "opencode-promptcraft"`
+  works in place of the path.
 
 Then use `/prompt-review <prompt>`, `/prompt-review all`, and `/prompt-apply`.
 See [`packages/opencode/README.md`](../packages/opencode/README.md) for options
@@ -253,9 +285,15 @@ All CLI wrappers follow the same contract:
 
 ## Troubleshooting
 
-- **`promptcraft: command not found`** — install the package globally, use
-  `npx -y @promptcraft/cli`, or reinstall the wrapper with
-  `--cli "node /absolute/path/to/packages/cli/dist/cli.js"`.
+- **`promptcraft: command not found`** — from a checkout, run
+  `cd packages/cli && npm link` after `npm run build`, or reinstall the wrapper
+  with `--cli "node /absolute/path/to/PromptCraft/packages/cli/dist/cli.js"`.
+  If the CLI is published, install it globally or use
+  `--cli "npx -y @promptcraft/cli"`.
+- **OpenCode shows no PromptCraft commands** — confirm the `plugins` path points
+  at `packages/opencode` (not the repository root), that `dist/index.js` exists
+  because you ran `npm run build`, and that `opencode plugin list` shows
+  `promptcraft`. Then restart OpenCode or run `opencode reload`.
 - **Command missing after install** — restart the harness. Codex, Claude Code
   and Cursor load wrappers at startup; Gemini has `/commands reload`.
 - **The agent implemented the task instead of reviewing** — make sure the
