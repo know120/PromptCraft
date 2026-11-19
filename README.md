@@ -20,31 +20,27 @@ stronger version you can send instead.
 
 ### OpenCode
 
-The OpenCode plugin is the richest adapter. From a published checkout you can
-use it immediately:
+The OpenCode plugin is the richest adapter. It is not on npm yet, so load it
+from a GitHub checkout:
 
 ```sh
-npm install -D opencode-promptcraft
-```
-
-Or from this repository:
-
-```sh
+git clone https://github.com/know120/PromptCraft.git
+cd PromptCraft
 npm install
 npm run build
 ```
 
-Then add it to your OpenCode config:
+Then point OpenCode at the built package directory:
 
 ```jsonc
-// opencode.jsonc
+// ~/.config/opencode/opencode.json or ./opencode.jsonc
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
     {
-      "package": "opencode-promptcraft",
+      "package": "/absolute/path/to/PromptCraft/packages/opencode",
       "options": {
-        "llm": "auto", // "auto" | "always" | "never"
+        "llm": "auto", // "auto" | "always" | "never"; "never" is heuristics only
         "llmThreshold": 85
       }
     }
@@ -52,14 +48,18 @@ Then add it to your OpenCode config:
 }
 ```
 
-For local development, load the built package with a tiny shim in
-`.opencode/plugins/promptcraft.ts`:
+Use an absolute path or `file:///absolute/path/to/PromptCraft/packages/opencode`.
+The directory must contain `dist/index.js`, so rerun `npm run build` after
+pulling. Restart OpenCode or run `opencode reload`, then check that
+`opencode plugin list` shows `promptcraft`.
 
-```ts
-export { default } from "/absolute/path/to/PromptCraft/packages/opencode/dist/index.js"
-```
+OpenCode 1 needed a shim such as `~/.config/opencode/plugins/promptcraft.ts`
+that re-exported the build. The V2 `plugins` entry above replaces it — delete
+the shim so the plugin is not loaded twice. When `opencode-promptcraft` is
+published, `"package": "opencode-promptcraft"` works in place of the path.
 
-Restart OpenCode after changing the plugin list.
+The full harness walkthrough, including every CLI wrapper, is in
+[`docs/enable-in-any-harness.md`](docs/enable-in-any-harness.md).
 
 ### Using it
 
@@ -89,13 +89,31 @@ session report: an average score, then one section per prompt with its own
 findings and suggested prompts. The suggested prompt of the weakest prompt is
 stored, so `/prompt-apply` sends that one.
 
+`/prompt-review all`, `/prompt-review --all`, and `/prompt-review -a` are
+equivalent. PromptCraft records each prompt as it is sent, so the session
+review still covers prompts that OpenCode has since compacted out of the
+model-visible context. Prompts sent before PromptCraft was installed into a
+session are only available while they remain in that context.
+
 ### Codex
 
-Codex uses a skill backed by the shared `promptcraft` CLI:
+Codex uses a skill backed by the shared `promptcraft` CLI. Install both from
+GitHub:
 
 ```sh
-npm install -g @promptcraft/cli
+git clone https://github.com/know120/PromptCraft.git
+cd PromptCraft
+npm install
+npm run build
+(cd packages/cli && npm link)      # puts `promptcraft` on your PATH
 promptcraft install codex --global
+```
+
+Without `npm link`, call the built CLI directly:
+
+```sh
+node /absolute/path/to/PromptCraft/packages/cli/dist/cli.js install codex --global \
+  --cli "node /absolute/path/to/PromptCraft/packages/cli/dist/cli.js"
 ```
 
 Restart Codex, then review a prompt before sending it:

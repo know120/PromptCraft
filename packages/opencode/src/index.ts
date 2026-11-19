@@ -7,6 +7,14 @@ import {
   type LlmProvider,
 } from "@promptcraft/core"
 import { readOptions, type PromptCraftOptions } from "./options.js"
+import {
+  appendPrompt,
+  isPromptCraftCommand,
+  isSessionReview,
+  isSessionSentinel,
+  mergePrompts,
+  type StoredPrompt,
+} from "./prompt-log.js"
 import { createOpenCodeProvider } from "./provider.js"
 
 interface StoredReview {
@@ -16,7 +24,7 @@ interface StoredReview {
 }
 
 const storageKey = (sessionID: string) => `last-review/${sessionID}`
-const SESSION_REVIEW = /^all\b/i
+const promptKey = (sessionID: string) => `prompts/${sessionID}`
 
 function usage(options: PromptCraftOptions): string {
   return [
@@ -56,6 +64,84 @@ export default Plugin.define({
         description,
         resume: options.immediate,
       })
+
+    const readStoredPrompts = async (
+      sessionID: string,
+    ): Promise<StoredPrompt[]> => {
+      const raw = await ctx.storage.get(promptKey(sessionID))
+      if (!Array.isArray(raw)) return []
+
+      const prompts: StoredPrompt[] = []
+      for (const entry of raw) {
+        if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+          continue
+        }
+        const record = entry as Record<string, unknown>
+        if (typeof record.id !== "string" || typeof record.text !== "string") {
+          continue
+        }
+        prompts.push({
+          id: record.id,
+          text: record.text,
+          createdAt:
+            typeof record.createdAt === "number" ? record.createdAt : 0,
+        })
+      }
+      return prompts
+    }
+
+    const writeStoredPrompts = (
+      sessionID: string,
+      prompts: readonly StoredPrompt[],
+    ) =>
+      ctx.storage.set(
+        promptKey(sessionID),
+        prompts as unknown as Array<Record<string, string | number>>,
+      )
+
+    /**
+     * The prompt hook runs before a prompt is admitted and may run more than
+     * once for the same message, so writes are serialized per session and
+     * deduped by message ID.
+     */
+    const promptWrites = new Map<string, Promise<void>>()
+    const queuePromptWrite = (
+      sessionID: string,
+      task: () => Promise<void>,
+    ): Promise<void> => {
+      const previous = promptWrites.get(sessionID) ?? Promise.resolve()
+      const next = previous.then(task, task).catch((error: unknown) => {
+        console.error("PromptCraft: could not save a prompt", error)
+      })
+      promptWrites.set(sessionID, next)
+      void next.then(() => {
+        if (promptWrites.get(sessionID) === next) promptWrites.delete(sessionID)
+      })
+      return next
+    }
+
+    const isCommandText = (text: string) =>
+      isSessionSentinel(text) ||
+      isPromptCraftCommand(text, [
+        options.reviewCommand,
+        options.applyCommand,
+      ])
+
+    await ctx.session.hook("prompt", (event) => {
+      const text = event.prompt.text.trim()
+      if (!text || isCommandText(text)) return
+
+      const id = String(event.messageID)
+      return queuePromptWrite(event.sessionID, async () => {
+        const current = await readStoredPrompts(event.sessionID)
+        const next = appendPrompt(current, {
+          id,
+          text,
+          createdAt: Date.now(),
+        })
+        if (next !== current) await writeStoredPrompts(event.sessionID, next)
+      })
+    })
 
     let provider: LlmProvider | undefined
     const getProvider = (): LlmProvider | undefined => {
@@ -102,28 +188,47 @@ export default Plugin.define({
       }
     }
 
-    const reviewSession = async (sessionID: string): Promise<void> => {
+    const runSessionReview = async (sessionID: string): Promise<void> => {
       const llm = getProvider()
+
+      // `session.context` is the compacted, model-visible transcript, so it
+      // loses prompts after compaction. Merge in the hook's durable log so a
+      // session review still sees prompts from before the compaction.
       const messages = await ctx.session.context({ sessionID })
+      await promptWrites.get(sessionID)
+      const merged = mergePrompts(
+        await readStoredPrompts(sessionID),
+        messages,
+        { skipText: isCommandText },
+      )
+      if (merged.length > 0) await writeStoredPrompts(sessionID, merged)
 
-      const prompts: string[] = []
-      for (const message of messages) {
-        if (message.type !== "user") continue
-        const text = (message.text ?? "").trim()
-        if (!text) continue
-        if (text.toLowerCase() === "all") continue
-        if (/^\/(prompt-)?/i.test(text)) continue
-        prompts.push(text)
-      }
-
-      if (prompts.length === 0) {
-        await notice(sessionID, usage(options), "PromptCraft")
+      if (merged.length === 0) {
+        const compacted = messages.some((message) => message.type === "compaction")
+        await notice(
+          sessionID,
+          compacted
+            ? [
+                "## PromptCraft — Session review",
+                "",
+                "No prompts are available. OpenCode compacted this session before",
+                "PromptCraft recorded its prompts. Prompts sent from now on will be",
+                "included in later reviews.",
+              ].join("\n")
+            : [
+                "## PromptCraft — Session review",
+                "",
+                "No prompts found in this session yet. Send a prompt first, or run",
+                `\`/${options.reviewCommand} <your prompt>\` to review one directly.`,
+              ].join("\n"),
+          "PromptCraft",
+        )
         return
       }
 
       const analyses: Analysis[] = []
-      for (const prompt of prompts) {
-        analyses.push(await analyze(prompt, { llm, llmMode: options.llm, llmThreshold: options.llmThreshold }))
+      for (const entry of merged) {
+        analyses.push(await analyze(entry.text, { llm, llmMode: options.llm, llmThreshold: options.llmThreshold }))
       }
 
       const averageScore = Math.round(
@@ -149,7 +254,7 @@ export default Plugin.define({
         sessionID,
         formatSessionReport(
           {
-            entries: prompts.map((prompt, index) => ({ prompt, analysis: analyses[index]! })),
+            entries: merged.map((entry, index) => ({ prompt: entry.text, analysis: analyses[index]! })),
             averageScore,
           },
           {
@@ -161,13 +266,21 @@ export default Plugin.define({
       )
     }
 
+    const reviewSession = async (sessionID: string): Promise<void> => {
+      try {
+        await runSessionReview(sessionID)
+      } catch (error) {
+        await notice(sessionID, errorText(error), "PromptCraft")
+      }
+    }
+
     await ctx.command.transform((editor) => {
       editor.add({
         name: options.reviewCommand,
         description: "Review a prompt for mistakes and build a stronger version",
         execute: async ({ sessionID, prompt }) => {
           const text = prompt.text.trim()
-          if (/^all\b/i.test(text)) {
+          if (isSessionReview(text)) {
             await reviewSession(sessionID)
             return
           }

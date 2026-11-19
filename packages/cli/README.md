@@ -6,16 +6,26 @@ agent.
 
 ## Install
 
+The package is not published to npm yet, so install it from a GitHub checkout:
+
 ```sh
-npm install -g @promptcraft/cli
+git clone https://github.com/know120/PromptCraft.git
+cd PromptCraft
+npm install
+npm run build
+cd packages/cli
+npm link            # puts `promptcraft` on your PATH
 promptcraft --version
 ```
 
-Or run it without installing:
+Without `npm link`, run the built entry point directly:
 
 ```sh
-npx -y @promptcraft/cli review "fix the login thing, it's broken"
+node /absolute/path/to/PromptCraft/packages/cli/dist/cli.js review "fix the login thing, it's broken"
 ```
+
+Once `@promptcraft/cli` is published, `npm install -g @promptcraft/cli` and
+`npx -y @promptcraft/cli` are equivalent.
 
 ## Review
 

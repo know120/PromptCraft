@@ -78,7 +78,7 @@ Examples:
   promptcraft review "fix the login thing, it's broken"
   promptcraft install codex --global
   promptcraft install claude gemini cursor --dir .
-  promptcraft install copilot --cli "npx -y @promptcraft/cli"
+  promptcraft install copilot --cli "node /path/to/PromptCraft/packages/cli/dist/cli.js"
 `
 
 /** Parse CLI arguments into a command. Exported for tests. */

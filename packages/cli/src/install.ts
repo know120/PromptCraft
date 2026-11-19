@@ -65,7 +65,7 @@ export interface InstallOptions {
   global?: boolean
   /** Overwrite files that already exist. */
   force?: boolean
-  /** Command that runs the PromptCraft CLI, e.g. `npx -y @promptcraft/cli`. */
+  /** Command that runs the PromptCraft CLI, e.g. `node /path/to/packages/cli/dist/cli.js`. */
   cli?: string
 }
 

@@ -11,11 +11,23 @@ Codex-flavored helpers over the shared `@promptcraft/core` engine:
 
 ## Use it in Codex
 
-Codex uses skills. Install the PromptCraft skill and the shared CLI:
+Codex uses skills. Install the PromptCraft skill and the shared CLI from
+GitHub, since the packages are not on npm yet:
 
 ```sh
-npm install -g @promptcraft/cli
+git clone https://github.com/know120/PromptCraft.git
+cd PromptCraft
+npm install
+npm run build
+(cd packages/cli && npm link)
 promptcraft install codex --global
+```
+
+Without `npm link`:
+
+```sh
+node /absolute/path/to/PromptCraft/packages/cli/dist/cli.js install codex --global \
+  --cli "node /absolute/path/to/PromptCraft/packages/cli/dist/cli.js"
 ```
 
 Restart Codex, then run `$promptcraft` with the prompt you want reviewed. See the
